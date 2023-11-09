@@ -26,10 +26,9 @@ if not face_cascade.load("data/haarcascade_frontalface_default.xml"):
 	print("Error -- Loading face cascade")
 	exit()
 
-if not plate_cascade.load("data/haarcascade_license_plate_rus_16stages.xml"):
+if not plate_cascade.load("data/haarcascade_russian_plate_number.xml"):
 	print("Error -- Loading number-plate cascade")
 	exit()
-
 
 def blur_video(filename):
 	...
@@ -48,4 +47,7 @@ def blur_image(filename):
 	for face in faces:
 		blur(actual_img, face)
 
-	actual_img.save("data/test1.jpg")
+	for plate in number_plates:
+		blur(actual_img, plate)
+
+	actual_img.save(filename)
