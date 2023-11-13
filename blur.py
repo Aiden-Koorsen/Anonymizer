@@ -17,7 +17,6 @@ def blur(image, area):
 	image.paste(cropped, (area[0], area[1]))
 
 
-
 # Load cascade models
 face_cascade = cv.CascadeClassifier()
 plate_cascade = cv.CascadeClassifier()
@@ -30,8 +29,54 @@ if not plate_cascade.load("data/haarcascade_russian_plate_number.xml"):
 	print("Error -- Loading number-plate cascade")
 	exit()
 
+
 def blur_video(filename):
-	...
+	# Load video
+	vid = cv.VideoCapture(filename)
+	
+	if not vid.isOpened():
+		print("Error loading video")
+		exit
+
+	vid_width = vid.get(cv.CAP_PROP_FRAME_WIDTH)
+	vid_height = vid.get(cv.CAP_PROP_FRAME_HEIGHT)
+	
+	# Define codec and writer to change video
+	fourcc = cv.VideoWriter_fourcc("m", "p", "4", "v")
+	out = cv.VideoWriter(filename.split('.')[0] + "_new.mp4", fourcc, 30.0, (int(vid_width), int(vid_height)), True)
+
+	# Loop until video is finished
+	while True:
+		ret, frame = vid.read()
+		
+		if not ret:
+			print("No more frames: Exiting")
+			break
+
+		gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+		
+		# Get faces and plates from frame
+		faces = face_cascade.detectMultiScale(gray)
+		number_plates = plate_cascade.detectMultiScale(gray)
+		
+		actual_img = Image.fromarray(frame).convert('RGB')
+
+		# Blur
+		for face in faces:
+			blur(actual_img, face)
+
+		for plate in number_plates:
+			blur(actual_img, plate)			
+	
+		new_frame = np.array(actual_img)
+
+		# Write out to new file
+		out.write(new_frame)
+		
+	# Release the video data	
+	vid.release()
+	out.release()
+		
 
 def blur_image(filename):
 	# Load the actual image

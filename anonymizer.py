@@ -20,7 +20,9 @@ if os.path.exists(filename) == False:
 	print("Error -- file " + filename + " does not exist")
 	exit()
 
-if extension == ".mp4":
+if extension == "mp4":
 	blur_video(filename)
-else:
+elif extension == "png" or extension == "jpeg" or extension == "jpg":
 	blur_image(filename)
+else:
+	print("Error -- Unrecognized file format please use:\n PNG, JPEG, JPG for images\nMP4 for video")
