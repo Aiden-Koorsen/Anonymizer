@@ -33,24 +33,6 @@ if not plate_cascade.load("data/haarcascade_russian_plate_number.xml"):
 	print("Error -- Loading number-plate cascade")
 	exit()
 
-processed_faces = []
-processed_plates = []
-
-
-# simple functions for processing a chunk of images and returning the faces and numberplates
-def process_face_chunk(frames):
-	faces = []
-	for frame in frames:
-		faces = face_cascade.detectMultiScale(frame)
-		processed_faces.append(faces)
-		
-def process_plate_chunk(frames):
-	plates = []
-	for frame in frames:
-		plates = plate_cascade.detectMultiScale(frame)
-		processed_plates.append(plates)
-#
-
 
 def blur_video(filename, want_faces, want_plates):
 	start_time = time.time()
@@ -61,7 +43,7 @@ def blur_video(filename, want_faces, want_plates):
 
 	# Load video
 	vid = cv.VideoCapture(filename)
-	
+
 	if not vid.isOpened():
 		print("Error loading video")
 		exit
@@ -81,51 +63,20 @@ def blur_video(filename, want_faces, want_plates):
 		gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 		frames.append(gray)
 		video_frames.append(Image.fromarray(frame).convert('RGB'))
+	current_frame = 0
+	for frame in frames:
+		if want_faces:
+			faces = face_cascade.detectMultiScale(frame)
+			for face in faces:
+				blur(video_frames[current_frame], face)
+		if want_plates:
+			plates = plate_cascade.detectMultiScale(frame)
+			for plate in plates:
+					blur(video_frames[current_frame], plate)
 
-	# Split data into two chuncks
-	HALF_LENGTH = int(len(frames) / 2)
-	chunk1 = frames[:HALF_LENGTH]
-	chunk2 = frames[HALF_LENGTH:len(frames) - HALF_LENGTH]
+		current_frame = current_frame + 1
 
-	# Process data if the user wants to
-	if want_faces:
-		face_thread1 = threading.Thread(target=process_face_chunk, args=(chunk1,))
-	
-	if want_plates:
-		plate_thread1 = threading.Thread(target=process_plate_chunk, args=(chunk1,))
-
-	if want_faces:
-		face_thread1.start()
-
-	if want_plates:
-		plate_thread1.start()
-
-	if want_faces:
-		face_thread1.join()
-
-	if want_plates:
-		plate_thread1.join()
-
-	face_thread2 = threading.Thread(target=process_face_chunk, args=(chunk2,))
-	plate_thread2 = threading.Thread(target=process_plate_chunk, args=(chunk2,))
-
-	face_thread2.start()
-	plate_thread2.start()
-	face_thread2.join()
-	plate_thread2.join()
-	print("Processing of images took %s"%(time.time() - start_time))
-	start_time = time.time()
-
-	# Blur all needed areas in each video frane
-	for i in range(len(processed_faces)):
-		for face in processed_faces[i]:
-			blur(video_frames[i], face)
-
-	for i in range(len(processed_plates)):
-		for plate in processed_plates[i]:
-			blur(video_frames[i], plate)
-
-	print("Blurring of video frames took %s"%(time.time() - start_time))
+	print(f"Blurring of video frames took {(time.time() - start_time)} seconds")
 
 	fourcc = cv.VideoWriter_fourcc("m", "p", "4", "v")
 	out = cv.VideoWriter(temp_filename, fourcc, fps, (int(vid_width), int(vid_height)), True)
